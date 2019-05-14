@@ -74,14 +74,15 @@ def configure(
         outf.write(SERVER_NAME)
 
 
-def download(path, acquisition, verbose=False):
+def download(path, acquisition, save_zip=True, verbose=False):
     """Download one or more acquisitions from a Qubic test database.
 
     Connect to QuteDB and download the list of acquisitions specified by the
     argument `acquisitions`. For each acquisition, both the metadata and a ZIP
     file bundling all the FITS files acquired by QubicStudio are downloaded. The
     metadata are returned by the function, and the ZIP file is saved in the
-    directory `path`.
+    directory `path`, unless `save_zip` is false: in the latter case, only the
+    metadata will be downloaded.
 
     The parameter `acquisition` can be either a string identifying an
     acquisition, like "2019-01-02T11:23:54", or a list of strings of the same
@@ -120,15 +121,18 @@ def download(path, acquisition, verbose=False):
         SERVER_NAME, "api/v1/acquisitions/" + acquisition + "/archive"
     )
 
-    req = request.urlopen(archive_url)
-    datafile = req.read()
-    output_file_name = join(path, metadata["directory_name"] + ".zip")
-    with open(output_file_name, "wb") as outf:
-        outf.write(datafile)
+    if save_zip:
+        req = request.urlopen(archive_url)
+        datafile = req.read()
+        output_file_name = join(path, metadata["directory_name"] + ".zip")
+        with open(output_file_name, "wb") as outf:
+            outf.write(datafile)
 
-    if verbose:
-        print('File "{}" written to disk'.format(output_file_name))
+        metadata["output_file_name"] = output_file_name
+        if verbose:
+            print('File "{}" written to disk'.format(output_file_name))
 
-    metadata["output_file_name"] = output_file_name
+    else:
+        metadata["output_file_name"] = ""
+
     return metadata
-
